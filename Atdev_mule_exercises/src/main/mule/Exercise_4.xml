@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config1" doc:name="HTTP Listener config" doc:id="c462de44-166d-4aee-85a5-624d807df753" >
+		<http:listener-connection host="localhost" port="8081" />
+	</http:listener-config>
+	<flow name="postFlight-wsFlow" doc:id="d86eedee-03e7-4798-b571-0908e262a29d" >
+		<http:listener doc:name="Listener" doc:id="0b78c1eb-a941-4d93-9496-9cfc167bd02f" config-ref="HTTP_Listener_config" path="/addFlight"/>
+		<set-payload value='{"Message" : "Flight added Virtually"}&#10;attributes as String' doc:name="Set Payload" doc:id="8c72da36-ee2c-4add-aa1e-a917dc84fa2a" />
+		<db:insert doc:name="Insert" doc:id="e7db3a3c-c159-4b2a-881f-cccbdb209442" config-ref="Database_Config">
+			<db:sql ><![CDATA[INSERT INTO american (ID,code,price,departureDate,origin,destination,emptySeats,planeType,totalSeats) VALUES(ID,code,price,departureDate,origin,destination,emptySeats,planeType,totalSeats)]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{'ID': payload."ID",
+	'code': payload."code",
+	'price': payload."price",
+	'departureDate': payload."departureDate",
+	'origin': payload."origin",
+	'destination': payload."destination",
+	'emptySeats': payload."emptySeats",
+	'planeType': payload."planeType",
+	'totalSeats': payload."totalSeats",
+}]]]></db:input-parameters>
+		</db:insert>
+		<ee:transform doc:name="Transform Message" doc:id="8ec9e29c-ff7e-4244-8ad2-f18bd59531fc" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+[{
+	ID: payload as Number,
+	code: payload as String,
+	price: payload as Number,
+	departureDate: payload as String,
+	origin: payload as String,
+	destination: payload as String,
+	emptySeats: payload as Number,
+	plane: {
+		"type": payload as String,
+		totalSeats: payload as Number
+	}
+}]]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

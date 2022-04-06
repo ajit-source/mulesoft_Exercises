@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<db:config name="Database_ConfigLocal" doc:name="Database Config" doc:id="2a14edb8-ec93-47ea-bb27-df8df737869f" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="root" database="studentdb" />
+	</db:config>
+	<flow name="student-app-getFlowFlow" doc:id="6fb3cba6-20dd-4879-bffa-95f6190c95a1" >
+		<http:listener doc:name="Listener" doc:id="fe1ec863-9cb6-4da5-b915-17de80804816" config-ref="HTTP_Listener_config" path="/students" responseStreamingMode="ALWAYS" allowedMethods="GET"/>
+		<db:select doc:name="Select" doc:id="ebab4d77-6d7a-4c47-8acf-dd1143fd2310" config-ref="Database_ConfigLocal">
+			<db:sql ><![CDATA[SELECT * FROM student;]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="d540179d-cb31-47a0-9127-f8c0fee89b23" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="student-app-getFlowFlow1" doc:id="929a05ae-6e0b-47e1-a3a3-a691190d153b" >
+		<http:listener doc:name="Listener" doc:id="8d023ca9-2437-4462-b6b9-73c0d47865df" config-ref="HTTP_Listener_config" path="/students/{id}" allowedMethods="GET"/>
+		<db:select doc:name="Select" doc:id="cfc44bca-843a-484d-aacc-402322138911" config-ref="Database_ConfigLocal">
+			<db:sql ><![CDATA[Select * from student where STUDENT_NO = :id;]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	id: attributes.uriParams.id
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="b83780e5-a5f0-44e4-b868-47ae054ed073" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="student-app-postFlow" doc:id="2c47b07d-d970-4650-9738-9127d1683dc8" >
+		<http:listener doc:name="Listener" doc:id="c16c8eca-cb2d-4ef9-8d24-b35126ee0aa5" config-ref="HTTP_Listener_config" path="/students" allowedMethods="POST"/>
+		<db:insert doc:name="Insert" doc:id="2dcd17f8-84b0-4698-a273-7140f4a3a8c1" config-ref="Database_ConfigLocal">
+			<db:sql ><![CDATA[Insert into student (STUDENT_NO, STUDENT_NAME, STUDENT_DOB, STUDENT_DOJ) values (:id,:name,:dob,:doj);]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	id: payload.id,
+	name: payload.name,
+	dob: payload.dob,
+	doj: payload.doj
+
+}]]]></db:input-parameters>
+		</db:insert>
+		<ee:transform doc:name="Transform Message" doc:id="871fc5ef-d776-46b2-b909-cdf679a88c44" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Message": "Student added virtually"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

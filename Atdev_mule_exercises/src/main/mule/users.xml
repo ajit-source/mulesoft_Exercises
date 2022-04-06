@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<db:config name="Database_users" doc:name="Database Config" doc:id="19a27a97-2745-48a0-9ce9-e2cf2e526501" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="root" database="usersdb" />
+	</db:config>
+	<flow name="users-app-getFlowFlow" doc:id="10b5927c-f988-49b6-a70b-32f14866d250" >
+		<http:listener doc:name="Listener" doc:id="41050aaa-7704-4ce6-9e07-c6a6ac9c341f" config-ref="HTTP_Listener_config" path="/users" allowedMethods="GET"/>
+		<db:select doc:name="Select" doc:id="259575ac-466b-49c3-ae03-ecd526b6c451" config-ref="Database_users">
+			<db:sql ><![CDATA[Select * from users where username = :name;]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	name: attributes.queryParams.name
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="8618ddf7-2243-4d07-bfe1-194cf4938844" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
